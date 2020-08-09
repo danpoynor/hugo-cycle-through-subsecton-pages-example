@@ -1,0 +1,130 @@
+<h4>Cycle PrevInSection/NextInSection Pages in Hugo Subsection</h4>
+
+<p>Starting Point: Content organization</p>
+
+<pre style="font-size: .8rem">
+content/
+|── _index.md
+|── about.md
+|── contact.md
+└── portfolio/
+    |── _index.md
+    ├── project01/
+    │   ├── _index.md
+    │   ├── example01.md
+    │   ├── example02.md
+    │   ├── example03.md
+    │   ├── example04.md
+    │   ├── example05.md
+    ├── project02/
+    ...
+</pre>
+
+<hr>
+
+<p>Psuedo Code<br><small>(Note default Hugo Prev/Next logic is +/-.<br>.Prev on the last page in a collection returns nil.<br>.Next on the first page in a collection returns nil.)</small></p>
+
+<pre style="font-size: .8rem">
+  if (current page is first page)
+    Prev: link to last page
+    Next: link to .PrevInSection
+  else if (current page is last page)
+    Prev: link to .NextInSection
+    Next: link to first page
+  else
+    Prev: link to .NextInSection
+    Next: link to .PrevInSection
+  end
+</pre>
+
+<hr>
+
+{{ $related := (.Site.RegularPages.RelatedTo ( keyVals "project" .Params.project)).ByTitle }}
+{{ $currentPage := . }}
+
+<p>Test if this page is first/last/current in subsection</p>
+
+{{ with $related }}
+<ol class="related-examples">
+  {{ range $index, $element := $related }}
+  {{ if eq (add $index 1) (len $related) }}
+  <li>LAST <a href="{{ .RelPermalink }}" {{ if (eq $currentPage.RelPermalink .RelPermalink) }} class="current" {{ end }}>{{ .Title }}</a></li>
+  {{ else if eq . (index $related 0) }}
+  <li>FIRST <a href="{{ .RelPermalink }}" {{ if (eq $currentPage.RelPermalink .RelPermalink) }} class="current" {{ end }}>{{ .Title }}</a></li>
+  {{ else }}
+  <li><a href="{{ .RelPermalink }}" {{ if (eq $currentPage.RelPermalink .RelPermalink) }} class="current" {{ end }}>{{ .Title }}</a></li>
+  {{ end }}
+  {{ end }}
+</ol>
+{{ end }}
+
+<hr>
+
+<p>Add 2 more variables for code clarity</p>
+
+{{ $firstItem := index $related 0 }}
+{{ $lastItem := index $related (sub (len $related) 1) }}
+
+{{ with $related }}
+<ol class="related-examples">
+  {{ range . }}
+  {{ if eq . $lastItem }}
+  <li>LAST <a href="{{ .RelPermalink }}" {{ if (eq $currentPage.RelPermalink .RelPermalink) }} class="current" {{ end }}>{{ .Title }}</a></li>
+  {{ else if eq . $firstItem }}
+  <li>FIRST <a href="{{ .RelPermalink }}" {{ if (eq $currentPage.RelPermalink .RelPermalink) }} class="current" {{ end }}>{{ .Title }}</a></li>
+  {{ else }}
+  <li><a href="{{ .RelPermalink }}" {{ if (eq $currentPage.RelPermalink .RelPermalink) }} class="current" {{ end }}>{{ .Title }}</a></li>
+  {{ end }}
+  {{ end }}
+</ol>
+{{ end }}
+
+<hr>
+
+<p>Example 1</p>
+
+{{ if eq $currentPage $firstItem }}
+Previous: <a href="{{ $lastItem.RelPermalink }}">{{ $lastItem.Title }}</a>
+<br>
+{{ if $currentPage.PrevInSection }}
+Next: <a href="{{ $currentPage.PrevInSection.RelPermalink }}">{{ $currentPage.PrevInSection.Title }}</a>
+{{ end }}
+{{ else if eq $currentPage $lastItem }}
+Previous: <a href="{{ .NextInSection.RelPermalink }}">{{ .NextInSection.Title }}</a>
+<br>
+Next: <a href="{{ $firstItem.RelPermalink }}">{{ $firstItem.Title }}</a>
+{{ else }}
+{{ if .NextInSection }}
+Previous: <a href="{{ .NextInSection.RelPermalink }}">{{ .NextInSection.Title }}</a>
+{{ end }}
+<br>
+{{ if .PrevInSection }}
+Next: <a href="{{ .PrevInSection.RelPermalink }}">{{ .PrevInSection.Title }}</a>
+{{ end }}
+{{ end }}
+
+<hr>
+
+<p>Final Result: Example 2</p>
+
+<p style="text-align: center;">
+  {{ if eq $currentPage $firstItem }}
+  &lt; <a href="{{ $lastItem.RelPermalink }}">Prev</a>
+  |
+  {{ if $currentPage.PrevInSection }}
+  <a href="{{ $currentPage.PrevInSection.RelPermalink }}">Next</a> &gt;
+  {{ end }}
+  {{ else if eq $currentPage $lastItem }}
+  &lt; <a href="{{ .NextInSection.RelPermalink }}">Prev</a>
+  |
+  <a href="{{ $firstItem.RelPermalink }}">Next</a> &gt;
+  {{ else }}
+  {{ if .NextInSection }}
+  &lt; <a href="{{ .NextInSection.RelPermalink }}">Prev</a>
+  {{ end }}
+  |
+  {{ if .PrevInSection }}
+  <a href="{{ .PrevInSection.RelPermalink }}">Next</a> &gt;
+  {{ end }}
+  {{ end }}
+</p>
